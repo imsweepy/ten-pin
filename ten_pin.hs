@@ -125,7 +125,7 @@ tally_score_card' first_9_frames final_frame last_spare last_strike last_last_st
         (Just x,  Just y)  -> case x+y of
             10 -> x*(1+last_spare+last_strike+last_last_strike) + y*(1+last_strike) + tally_score_card' xs final_frame 1 0 0
             _  -> x*(1+last_spare+last_strike+last_last_strike) + y*(1+last_strike) + tally_score_card' xs final_frame 0 0 0
-
+        (Just x,  Nothing) -> x*(1+last_spare+last_strike+last_last_strike)
 --tally final frame
 tally_final_frame :: (Maybe Int, Maybe Int, Maybe Int) -> Int -> Int -> Int -> Int
 tally_final_frame final_frame last_spare last_strike last_last_strike = case final_frame of
