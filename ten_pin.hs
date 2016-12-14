@@ -3,7 +3,7 @@
 data Score_card = Card [(Maybe Int, Maybe Int)] (Maybe Int, Maybe Int, Maybe Int)
     deriving (Show, Eq)
 
---tests
+--tests run the functions test_1-test_19 they should all return True
 test_1 = update_card 1 create_card == Card [(Just 1, Nothing)] (Nothing, Nothing, Nothing)
 test_2 = Card [(Just 1, Just 2)] (Nothing, Nothing, Nothing) == update_card 2 (update_card 1 create_card)
 test_3 = Card [(Just 10, Nothing),(Just 1, Just 2)] (Nothing, Nothing, Nothing) == update_card 10 (update_card 2 (update_card 1 create_card))
@@ -40,13 +40,13 @@ test_16 = do
     return $card_score == 9*9 + 10
 test_17 = do
     card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 10, Just 9, Nothing)
-    return $card_score == 9*9 + 10 + 9 + 9
+    return $card_score == 9*9 + 10 + 9
 test_18 = do
     card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 10, Just 9, Just 10)
-    return $card_score == 9*9 + 10 + 9 + 9 + 10 + 10
+    return $card_score == 9*9 + 10 + 9 + 10
 test_19 = do
     card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 1, Just 9, Just 10)
-    return $card_score == 9*9 + 1 + 9 + 10 + 10
+    return $card_score == 9*9 + 1 + 9 + 10
 
 
 
@@ -82,31 +82,32 @@ need_new_frame bowl last_frame = case last_frame of
 update_final_frame :: Int -> Score_card -> Score_card
 update_final_frame bowl (Card first_9_frames final_frame) = case final_frame of
     (Nothing, Nothing, Nothing) -> Card first_9_frames (Just bowl, Nothing, Nothing)
-    (Just x, Nothing, Nothing) -> if x== 10 || x+bowl==10
+    (Just x,  Nothing, Nothing) -> if x== 10 || x+bowl==10
         then Card first_9_frames (Just x, Just bowl, Nothing)
         else error "invalid bowl"
-    (Just x, Just y, Nothing) -> if x== 10 || x+y==10
+    (Just x, Just y, Nothing)   -> if x== 10 || x+y==10
         then Card first_9_frames (Just x, Just y, Just bowl)
         else error "game should have ended already or invalid score card"
-    _                         -> error "game should have ended already or invalid score card"
+    _                           -> error "game should have ended already or invalid score card"
 
+--check if game is done
 tally_score_card :: Score_card -> IO(Int)
 tally_score_card (Card first_9_frames final_frame) = if length first_9_frames == 9
     then case final_frame of
         (Nothing, Nothing, Nothing) -> do
             putStrLn "game not finished"
             return $tally_score_card' (reverse first_9_frames) final_frame 0 0 0
-        (Just x, Nothing, Nothing) -> do
+        (Just x,  Nothing, Nothing) -> do
             putStrLn "game not finished"
             return $tally_score_card' (reverse first_9_frames) final_frame 0 0 0
-        (Just x, Just y, Nothing) -> if x+y>=10 
+        (Just x,  Just y,  Nothing) -> if x+y>=10 
             then do
                 putStrLn "game not finished"
                 return $tally_score_card' (reverse first_9_frames) final_frame 0 0 0
             else do
                 putStrLn "game finished"
                 return $tally_score_card' (reverse first_9_frames) final_frame 0 0 0
-        (Just x, Just y, Just z) -> do
+        (Just x,  Just y,  Just z)  -> do
             putStrLn "game finished"
             return $tally_score_card' (reverse first_9_frames) final_frame 0 0 0
     else if length first_9_frames < 9 
@@ -115,18 +116,20 @@ tally_score_card (Card first_9_frames final_frame) = if length first_9_frames ==
             return $tally_score_card' (reverse first_9_frames) final_frame 0 0 0
         else error "error invalid score card"
 
+--tally first 9 frames
 tally_score_card' :: [(Maybe Int, Maybe Int)] -> (Maybe Int, Maybe Int, Maybe Int) -> Int -> Int -> Int -> Int
 tally_score_card' first_9_frames final_frame last_spare last_strike last_last_strike = case first_9_frames of
     []   -> tally_final_frame final_frame last_spare last_strike last_last_strike
     x:xs -> case x of
         (Just 10, Nothing) -> 10*(1+last_spare+last_strike+last_last_strike) + tally_score_card' xs final_frame 0 1 last_strike
-        (Just x, Just y) -> case x+y of
+        (Just x,  Just y)  -> case x+y of
             10 -> x*(1+last_spare+last_strike+last_last_strike) + y*(1+last_strike) + tally_score_card' xs final_frame 1 0 0
             _  -> x*(1+last_spare+last_strike+last_last_strike) + y*(1+last_strike) + tally_score_card' xs final_frame 0 0 0
 
+--tally final frame
 tally_final_frame :: (Maybe Int, Maybe Int, Maybe Int) -> Int -> Int -> Int -> Int
 tally_final_frame final_frame last_spare last_strike last_last_strike = case final_frame of
     (Nothing, Nothing, Nothing) -> 0
-    (Just x, Nothing, Nothing) -> x*(1+last_spare+last_strike+last_last_strike)
-    (Just x, Just y, Nothing) -> x*(1+last_spare+last_strike+last_last_strike) + y*(1 + (\x->if x==10 then 1 else 0) x + last_strike)
-    (Just x, Just y, Just z) -> x*(1+last_spare+last_strike+last_last_strike) + y*(1 + (\x->if x==10 then 1 else 0) x + last_strike) + z*(1 + (\x->if x==10 then 1 else (if x+y==10 then 1 else 0)) x)
+    (Just x,  Nothing, Nothing) -> x*(1+last_spare+last_strike+last_last_strike)
+    (Just x,  Just y,  Nothing) -> x*(1+last_spare+last_strike+last_last_strike) + y*((\x->if x==10 then 1 else 0) x + last_strike)
+    (Just x,  Just y,  Just z)  -> x*(1+last_spare+last_strike+last_last_strike) + y*(1 + last_strike) + z*((\x->if x==10 then 1 else (if x+y==10 then 1 else 0)) x)
