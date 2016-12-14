@@ -35,6 +35,20 @@ test_14 = do
 test_15 = do
     card_score <- tally_score_card $Card (reverse[(Just 10, Nothing),(Just 10, Nothing),(Just 3,Just 7),(Just 4,Just 2)]) (Nothing, Nothing, Nothing)
     return $card_score == 10+10+10+3+3+3+7+7+4+4+2
+test_16 = do
+    card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 10, Nothing, Nothing)
+    return $card_score == 9*9 + 10
+test_17 = do
+    card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 10, Just 9, Nothing)
+    return $card_score == 9*9 + 10 + 9 + 9
+test_18 = do
+    card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 10, Just 9, Just 10)
+    return $card_score == 9*9 + 10 + 9 + 9 + 10 + 10
+test_19 = do
+    card_score <- tally_score_card $Card (take 9 (repeat (Just 1,Just 8))) (Just 1, Just 9, Just 10)
+    return $card_score == 9*9 + 1 + 9 + 10 + 10
+
+
 
 create_card :: Score_card
 create_card = Card [] (Nothing, Nothing, Nothing)
@@ -114,5 +128,5 @@ tally_final_frame :: (Maybe Int, Maybe Int, Maybe Int) -> Int -> Int -> Int -> I
 tally_final_frame final_frame last_spare last_strike last_last_strike = case final_frame of
     (Nothing, Nothing, Nothing) -> 0
     (Just x, Nothing, Nothing) -> x*(1+last_spare+last_strike+last_last_strike)
-    (Just x, Just y, Nothing) -> x*(1+last_spare+last_strike+last_last_strike) + y*(1+last_strike)
-    (Just x, Just y, Just z) -> x*(1+last_spare+last_strike+last_last_strike) + y*(1+last_strike) + z
+    (Just x, Just y, Nothing) -> x*(1+last_spare+last_strike+last_last_strike) + y*(1 + (\x->if x==10 then 1 else 0) x + last_strike)
+    (Just x, Just y, Just z) -> x*(1+last_spare+last_strike+last_last_strike) + y*(1 + (\x->if x==10 then 1 else 0) x + last_strike) + z*(1 + (\x->if x==10 then 1 else (if x+y==10 then 1 else 0)) x)
